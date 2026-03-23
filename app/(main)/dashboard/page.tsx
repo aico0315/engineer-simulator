@@ -1,0 +1,116 @@
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import { formatReward } from '@/lib/utils'
+import { Trophy, Briefcase, Star, TrendingUp } from 'lucide-react'
+
+export default async function DashboardPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single()
+
+  // 完了した案件と各レビュースコアを取得
+  const { data: completedProjects } = await supabase
+    .from('user_projects')
+    .select(`
+      *,
+      project:projects(title, difficulty, category, reward_amount)
+    `)
+    .eq('user_id', user.id)
+    .eq('status', 'completed')
+    .order('completed_at', { ascending: false })
+
+  // 全案件（進行中を含む）
+  const { data: allUserProjects } = await supabase
+    .from('user_projects')
+    .select('status')
+    .eq('user_id', user.id)
+
+  const stats = {
+    total: allUserProjects?.length ?? 0,
+    completed: allUserProjects?.filter((p) => p.status === 'completed').length ?? 0,
+    inProgress: allUserProjects?.filter((p) => p.status === 'in_progress').length ?? 0,
+  }
+
+  return (
+    <div className="p-8">
+      <h1 className="text-2xl font-bold text-slate-900 mb-8">ダッシュボード</h1>
+
+      {/* サマリーカード */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+        {[
+          {
+            label: '累計擬似報酬',
+            value: formatReward(profile?.total_earnings ?? 0),
+            icon: <Trophy className="w-5 h-5 text-amber-500" />,
+            bg: 'bg-amber-50',
+          },
+          {
+            label: '完了案件数',
+            value: `${stats.completed}件`,
+            icon: <Star className="w-5 h-5 text-blue-500" />,
+            bg: 'bg-blue-50',
+          },
+          {
+            label: '進行中',
+            value: `${stats.inProgress}件`,
+            icon: <Briefcase className="w-5 h-5 text-emerald-500" />,
+            bg: 'bg-emerald-50',
+          },
+          {
+            label: '受注総数',
+            value: `${stats.total}件`,
+            icon: <TrendingUp className="w-5 h-5 text-purple-500" />,
+            bg: 'bg-purple-50',
+          },
+        ].map((card) => (
+          <div key={card.label} className={`${card.bg} rounded-2xl p-5 border border-white`}>
+            <div className="flex items-center gap-2 mb-2">
+              {card.icon}
+              <span className="text-sm text-slate-500">{card.label}</span>
+            </div>
+            <div className="text-2xl font-bold text-slate-900">{card.value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* 完了済み案件一覧 */}
+      <div>
+        <h2 className="text-lg font-semibold text-slate-900 mb-4">完了した案件</h2>
+        {completedProjects && completedProjects.length > 0 ? (
+          <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+            {completedProjects.map((up, index) => {
+              const project = up.project as { title: string; difficulty: string; reward_amount: number } | null
+              return (
+                <div
+                  key={up.id}
+                  className={`flex items-center justify-between px-6 py-4 ${index !== 0 ? 'border-t border-slate-100' : ''}`}
+                >
+                  <div>
+                    <p className="font-medium text-slate-900">{project?.title ?? '---'}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      完了: {up.completed_at ? new Date(up.completed_at).toLocaleDateString('ja-JP') : '---'}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-amber-600">{formatReward(up.earned_reward ?? 0)}</p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-16 text-slate-400 bg-white border border-slate-200 rounded-2xl">
+            <p>まだ完了した案件がありません</p>
+            <p className="text-sm mt-1">案件ボードから案件を受注してみましょう</p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
