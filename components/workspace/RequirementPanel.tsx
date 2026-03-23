@@ -46,7 +46,7 @@ export default function RequirementPanel({ project }: { project: Project }) {
         <div className="mb-6">
           <p className="text-xs text-slate-400 font-medium mb-2">使用技術</p>
           <div className="flex flex-wrap gap-2">
-            {project.tech_stack.map((tech) => (
+            {(project.tech_stack ?? []).map((tech) => (
               <span key={tech} className="text-sm px-2 py-0.5 bg-slate-900 text-slate-200 rounded font-mono">
                 {tech}
               </span>

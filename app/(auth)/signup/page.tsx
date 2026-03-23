@@ -28,7 +28,7 @@ export default function SignupPage() {
     const supabase = createClient()
 
     // Supabaseに新規ユーザーを作成
-    const { data, error: signupError } = await supabase.auth.signUp({
+    const { error: signupError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -43,18 +43,7 @@ export default function SignupPage() {
       return
     }
 
-    // profilesテーブルにレコードを挿入
-    if (data.user) {
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({ id: data.user.id, username })
-
-      if (profileError) {
-        setError('プロフィールの作成に失敗しました。')
-        setLoading(false)
-        return
-      }
-    }
+    // profilesへの挿入はon_auth_user_createdトリガーが自動で行う
 
     router.push('/board')
     router.refresh()

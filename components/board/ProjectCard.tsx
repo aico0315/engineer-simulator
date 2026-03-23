@@ -47,7 +47,7 @@ export default function ProjectCard({ project, isAccepted }: Props) {
         <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
           {CATEGORY_LABELS[project.category]}
         </span>
-        {project.tech_stack.slice(0, 2).map((tech) => (
+        {(project.tech_stack ?? []).slice(0, 2).map((tech) => (
           <span key={tech} className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
             {tech}
           </span>

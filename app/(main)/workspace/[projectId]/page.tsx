@@ -32,6 +32,12 @@ export default async function WorkspacePage({ params }: Props) {
 
   // 未受注なら自動で受注レコードを作成（案件ページを開いたタイミングで受注）
   if (!userProject) {
+    // profilesがない場合（手動登録・トリガー未発火）に備えてupsert
+    await supabase.from('profiles').upsert(
+      { id: user.id, username: user.email?.split('@')[0] ?? 'user' },
+      { onConflict: 'id', ignoreDuplicates: true }
+    )
+
     const { data: newUserProject } = await supabase
       .from('user_projects')
       .insert({ user_id: user.id, project_id: projectId })
