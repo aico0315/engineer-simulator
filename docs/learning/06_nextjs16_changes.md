@@ -1,96 +1,116 @@
-# Next.js 16 の変更点 - ハマりポイント集
+# Next.js 16 で変わったこと - ハマりポイント集
 
-## 最重要: `middleware.ts` → `proxy.ts` への変更
+---
 
-Next.js 16 から、ルートディレクトリの `middleware.ts` ファイルが **`proxy.ts`** にリネームされました。
+## なぜこのドキュメントが必要か
 
-### 変更前（Next.js 15以前）
+Next.js はバージョンアップのたびに書き方が変わることがあります。
+インターネットの記事や、AIが生成するコードは**古いバージョンの書き方**になっていることが多く、そのままコピーしても動かないことがあります。
+
+このドキュメントでは「古い書き方」と「新しい書き方」の違いをまとめています。
+
+---
+
+## 最重要: `middleware.ts` が `proxy.ts` になった
+
+**これが一番大きな変更点です。**
+
+Next.js では、すべてのリクエストが実際のページに届く前に「前処理」を挟むことができます。このアプリでは「ログインしていないユーザーをログインページに飛ばす」という処理がここで行われています。
+
+### 古い書き方（Next.js 15以前）
+
 ```typescript
-// middleware.ts
-export function middleware(request: NextRequest) { ... }
+// ファイル名: middleware.ts
+export function middleware(request: NextRequest) {
+  // ...
+}
 ```
 
-### 変更後（Next.js 16）
+### 新しい書き方（Next.js 16）
+
 ```typescript
-// proxy.ts
-export function proxy(request: NextRequest) { ... }
+// ファイル名: proxy.ts（ファイル名が変わった！）
+export function proxy(request: NextRequest) {  // 関数名も変わった！
+  // ...
+}
 ```
 
-**変更点まとめ**:
+**変わったポイント**:
 - ファイル名: `middleware.ts` → `proxy.ts`
-- 関数名: `middleware` → `proxy`（または `default export`）
-- `config` の `matcher` は同じ
+- 関数名: `middleware` → `proxy`
+- それ以外の書き方は同じ
 
-**理由**: 「Middlewareという名前がその機能（リクエストの前処理）を正確に表していない」として `Proxy` に改名された。機能自体は完全に同じ。
-
----
-
-## このプロジェクトでの対応
-
-`proxy.ts` を作成し、古い `middleware.ts` を削除しました:
-
-```typescript
-// proxy.ts
-import { type NextRequest } from 'next/server'
-import { updateSession } from '@/lib/supabase/middleware'
-
-export async function proxy(request: NextRequest) {
-  return await updateSession(request)
-}
-
-export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
-}
-```
-
-`lib/supabase/middleware.ts` のファイル名は変更不要（内部実装ファイルなので、Next.jsのルール対象外）。
+**なぜ名前が変わったか**: 「ミドルウェア」という名前がその機能（リクエストの前処理・代理）を正確に表していないとして、より実態に合った「プロキシ（代理）」という名前に改められました。
 
 ---
 
-## その他の変更点（参考）
+## `cookies()` に `await` が必要になった（Next.js 15〜）
 
-### `cookies()` の `await` が必須
-Next.js 15以降、`cookies()` は非同期関数になった:
+Cookie（ログイン情報などを保存する仕組み）を取得するコードが非同期に変わりました。
+
+### 古い書き方
+
 ```typescript
-// NG（古い書き方）
-const cookieStore = cookies()
+import { cookies } from 'next/headers'
 
-// OK（新しい書き方）
-const cookieStore = await cookies()
+const cookieStore = cookies()  // await なし
 ```
 
-### `params` が `Promise` になった
-Dynamic Route の `params` が Promise に:
+### 新しい書き方
+
 ```typescript
-// NG（古い書き方）
+import { cookies } from 'next/headers'
+
+const cookieStore = await cookies()  // await が必要！
+```
+
+**`await` がないとどうなるか**: エラーにならず動いてしまうことがありますが、正しくCookieが取得できず、ログイン状態が認識されないなどの不具合が起きます。
+
+---
+
+## URLのパラメータに `await` が必要になった（Next.js 15〜）
+
+例えば `/workspace/abc123` のような URL の `abc123` の部分（パラメータ）を取得するコードも変わりました。
+
+### 古い書き方
+
+```typescript
 export default function Page({ params }: { params: { id: string } }) {
-  const { id } = params
-}
-
-// OK（新しい書き方）
-export default async function Page({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
+  const { id } = params  // そのまま使えた
 }
 ```
 
-このプロジェクトの `workspace/[projectId]/page.tsx` では対応済み:
+### 新しい書き方
+
 ```typescript
-export default async function WorkspacePage({ params }: Props) {
-  const { projectId } = await params  // ← await が必要
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params  // await が必要！
+}
 ```
+
+このプロジェクトの `workspace/[projectId]/page.tsx` ではすでに対応済みです。
 
 ---
 
-## AIで書いたコードをそのまま使う際の注意
+## AIが生成するコードを使うときの注意
 
-ChatGPTやClaude等のAIが生成するNext.jsコードは、
-トレーニングデータのカットオフ日時点の古いバージョンのコードを生成することがある。
+ChatGPTやClaude などのAIにNext.jsのコードを生成してもらうと、古いバージョンの書き方になっていることがあります。AIは学習データに含まれる「その時点での最新の書き方」を使うため、最新バージョンに追いついていないことがあります。
 
-**確認すべき主な変更点**:
-1. `middleware.ts` → `proxy.ts`（Next.js 16）
-2. `params` の `await`（Next.js 15+）
-3. `cookies()` の `await`（Next.js 15+）
-4. Server Actionsの書き方の変化
+**AIが生成したNext.jsコードをコピーする前に確認すべきこと**:
 
-**実務でのベストプラクティス**: 新しいフレームワークを使う際は必ず公式ドキュメントを確認する。
-このプロジェクトでは `node_modules/next/dist/docs/` に最新ドキュメントが含まれている。
+| 確認項目 | 古い書き方 | 新しい書き方 |
+|---|---|---|
+| ミドルウェア | `middleware.ts` の `middleware()` | `proxy.ts` の `proxy()` |
+| URLパラメータ | `params.id` | `(await params).id` |
+| Cookie取得 | `cookies()` | `await cookies()` |
+
+**困ったときは**: このプロジェクトには `node_modules/next/dist/docs/` フォルダに最新のドキュメントが入っています。「この書き方が正しいか？」と迷ったときはそちらを確認してください。
+
+---
+
+## まとめ：新しいフレームワークを使うときの心がまえ
+
+1. **ネットの記事の日付を確認する** → 2年以上前の記事は古い可能性がある
+2. **AIが生成したコードを鵜呑みにしない** → そのまま動くか確認してから使う
+3. **エラーメッセージをよく読む** → 「deprecated（非推奨）」「use X instead（代わりにXを使ってください）」という文言が出たら変更点がある
+4. **公式ドキュメントが一番正確** → わからないことがあれば公式に戻る
