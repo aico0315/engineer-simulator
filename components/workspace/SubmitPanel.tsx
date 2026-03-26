@@ -1,8 +1,15 @@
 'use client'
 
-import { useState } from 'react'
-import { Send, CheckCircle2, Plus, X } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Send, CheckCircle2, Plus, X, Code2, Search, MessageSquare, BarChart3 } from 'lucide-react'
 import type { Project, UserProject, Submission, Review, CodeFile } from '@/types'
+
+const REVIEW_STEPS = [
+  { icon: Code2,         label: 'コードを解析中...',       sub: '全ファイルの構造を読み込んでいます' },
+  { icon: Search,        label: '要件との照合中...',        sub: '仕様を満たしているか確認しています' },
+  { icon: MessageSquare, label: 'レビューコメントを生成中...', sub: 'シニアエンジニア視点でフィードバックを作成しています' },
+  { icon: BarChart3,     label: 'スコアを算出中...',        sub: '可読性・セキュリティ・機能性を評価しています' },
+]
 
 const EXTENSION_TO_LANGUAGE: Record<string, string> = {
   html: 'html',
@@ -41,8 +48,18 @@ export default function SubmitPanel({ userProject, project, latestSubmission, on
   const [showNewFileInput, setShowNewFileInput] = useState(false)
   const [newFileName, setNewFileName] = useState('')
 
+  const [stepIndex, setStepIndex] = useState(0)
+
   const activeFile = files[activeIndex]
   const hasContent = files.some((f) => f.content.trim())
+
+  useEffect(() => {
+    if (!loading) { setStepIndex(0); return }
+    const id = setInterval(() => {
+      setStepIndex((prev) => Math.min(prev + 1, REVIEW_STEPS.length - 1))
+    }, 2200)
+    return () => clearInterval(id)
+  }, [loading])
 
   function updateActiveContent(content: string) {
     setFiles((prev) => prev.map((f, i) => (i === activeIndex ? { ...f, content } : f)))
@@ -64,7 +81,8 @@ export default function SubmitPanel({ userProject, project, latestSubmission, on
     setActiveIndex((prev) => Math.min(prev, files.length - 2))
   }
 
-  async function handleSubmit() {
+  async function handleSubmit(e: React.SyntheticEvent) {
+    e.preventDefault()
     if (!hasContent || loading) return
 
     setLoading(true)
@@ -89,6 +107,49 @@ export default function SubmitPanel({ userProject, project, latestSubmission, on
     }
   }
 
+  if (loading) {
+    const step = REVIEW_STEPS[stepIndex]
+    const Icon = step.icon
+    return (
+      <div className="h-full flex flex-col items-center justify-center gap-8 p-8">
+        {/* スピナー */}
+        <div className="relative w-20 h-20">
+          <div className="absolute inset-0 rounded-full border-4 border-slate-100" />
+          <div className="absolute inset-0 rounded-full border-4 border-t-blue-500 animate-spin" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Icon className="w-7 h-7 text-blue-500" />
+          </div>
+        </div>
+
+        {/* ステップメッセージ */}
+        <div className="text-center">
+          <p key={stepIndex} className="text-lg font-semibold text-slate-800 animate-pulse">
+            {step.label}
+          </p>
+          <p className="text-sm text-slate-400 mt-1">{step.sub}</p>
+        </div>
+
+        {/* ステップ進捗ドット */}
+        <div className="flex items-center gap-2">
+          {REVIEW_STEPS.map((_, i) => (
+            <div
+              key={i}
+              className={`rounded-full transition-all duration-500 ${
+                i < stepIndex
+                  ? 'w-2 h-2 bg-blue-400'
+                  : i === stepIndex
+                  ? 'w-3 h-3 bg-blue-600'
+                  : 'w-2 h-2 bg-slate-200'
+              }`}
+            />
+          ))}
+        </div>
+
+        <p className="text-xs text-slate-300">しばらくお待ちください...</p>
+      </div>
+    )
+  }
+
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-4xl mx-auto p-8">
@@ -107,7 +168,7 @@ export default function SubmitPanel({ userProject, project, latestSubmission, on
           </div>
         )}
 
-        <form action={handleSubmit} className="space-y-0">
+        <form onSubmit={handleSubmit} className="space-y-0">
           {/* ファイルタブ */}
           <div className="flex items-center gap-0 border border-slate-200 rounded-t-xl overflow-x-auto bg-slate-100">
             {files.map((file, index) => (
@@ -200,9 +261,7 @@ export default function SubmitPanel({ userProject, project, latestSubmission, on
               className="flex items-center gap-2 px-6 py-3 bg-slate-900 hover:bg-slate-700 disabled:bg-slate-300 text-white font-semibold rounded-xl transition-colors"
             >
               <Send className="w-4 h-4" />
-              {loading
-                ? 'AIがレビュー中...'
-                : `${files.length}ファイルをまとめてレビュー提出`}
+              {`${files.length}ファイルをまとめてレビュー提出`}
             </button>
             <p className="text-xs text-slate-400 mt-2">
               提出したファイル: {files.map((f) => f.name).join(', ')}

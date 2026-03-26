@@ -1,4 +1,4 @@
-import { AlertCircle, AlertTriangle, Lightbulb } from 'lucide-react'
+import { AlertCircle, AlertTriangle, Lightbulb, CheckCircle2, RotateCcw } from 'lucide-react'
 import { cn, getScoreColor } from '@/lib/utils'
 import type { Review, ReviewComment } from '@/types'
 
@@ -56,9 +56,35 @@ function CommentCard({ comment }: { comment: ReviewComment }) {
 }
 
 export default function ReviewPanel({ review }: { review: Review }) {
+  const errorCount = review.detailed_comments.filter((c) => c.severity === 'error').length
+  const isDeliverable = errorCount === 0 && review.overall_score >= 70
+
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-3xl mx-auto p-8">
+        {/* 納品判定バナー */}
+        {isDeliverable ? (
+          <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-xl mb-6">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+            <div>
+              <p className="font-semibold text-emerald-800">納品完了！擬似報酬を獲得しました</p>
+              <p className="text-sm text-emerald-600">要修正項目がなく、品質基準を満たしています。</p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-xl mb-6">
+            <RotateCcw className="w-5 h-5 text-red-500 shrink-0" />
+            <div>
+              <p className="font-semibold text-red-700">
+                要修正が {errorCount} 件あります — 修正して再提出してください
+              </p>
+              <p className="text-sm text-red-500">
+                「要修正」がすべてなくなると納品済みになり、擬似報酬を獲得できます。
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* 総合スコア */}
         <div className="flex items-center gap-6 p-6 bg-white border border-slate-200 rounded-2xl mb-6">
           <div className="text-center">

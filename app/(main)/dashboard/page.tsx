@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation'
 import { formatReward } from '@/lib/utils'
 import { Trophy, Briefcase, Star, TrendingUp } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -14,21 +16,10 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .single()
 
-  // 完了した案件と各レビュースコアを取得
-  const { data: completedProjects } = await supabase
-    .from('user_projects')
-    .select(`
-      *,
-      project:projects(title, difficulty, category, reward_amount)
-    `)
-    .eq('user_id', user.id)
-    .eq('status', 'completed')
-    .order('completed_at', { ascending: false })
-
-  // 全案件（進行中を含む）
+  // 全案件を取得（統計 + 完了一覧を同じデータから作る）
   const { data: allUserProjects } = await supabase
     .from('user_projects')
-    .select('status')
+    .select('id, project_id, status, completed_at, earned_reward')
     .eq('user_id', user.id)
 
   const stats = {
@@ -36,6 +27,23 @@ export default async function DashboardPage() {
     completed: allUserProjects?.filter((p) => p.status === 'completed').length ?? 0,
     inProgress: allUserProjects?.filter((p) => p.status === 'in_progress').length ?? 0,
   }
+
+  // 完了案件のプロジェクト詳細を取得
+  const completedUserProjects = allUserProjects?.filter((p) => p.status === 'completed') ?? []
+  const completedProjectIds = completedUserProjects.map((up) => up.project_id)
+  const { data: projectDetails } = completedProjectIds.length > 0
+    ? await supabase
+        .from('projects')
+        .select('id, title, difficulty, reward_amount')
+        .in('id', completedProjectIds)
+    : { data: [] }
+
+  const completedProjects = completedUserProjects
+    .map((up) => ({
+      ...up,
+      project: projectDetails?.find((p) => p.id === up.project_id) ?? null,
+    }))
+    .sort((a, b) => (b.completed_at ?? '').localeCompare(a.completed_at ?? ''))
 
   return (
     <div className="p-8">
@@ -51,7 +59,7 @@ export default async function DashboardPage() {
             bg: 'bg-amber-50',
           },
           {
-            label: '完了案件数',
+            label: '納品完了件数',
             value: `${stats.completed}件`,
             icon: <Star className="w-5 h-5 text-blue-500" />,
             bg: 'bg-blue-50',

@@ -10,10 +10,11 @@ type Props = {
   project: Project
   messages: ChatMessage[]
   onMessagesUpdate: (messages: ChatMessage[]) => void
+  input: string
+  onInputChange: (value: string) => void
 }
 
-export default function ChatPanel({ userProject, project, messages, onMessagesUpdate }: Props) {
-  const [input, setInput] = useState('')
+export default function ChatPanel({ userProject, project, messages, onMessagesUpdate, input, onInputChange }: Props) {
   const [loading, setLoading] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
 
@@ -27,7 +28,7 @@ export default function ChatPanel({ userProject, project, messages, onMessagesUp
     if (!input.trim() || loading) return
 
     const userMessage = input.trim()
-    setInput('')
+    onInputChange('')
     setLoading(true)
 
     // ユーザーメッセージを楽観的UI更新（即座に画面に反映）
@@ -114,7 +115,7 @@ export default function ChatPanel({ userProject, project, messages, onMessagesUp
         <form onSubmit={handleSend} className="flex gap-3">
           <input
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => onInputChange(e.target.value)}
             placeholder="クライアントに質問する..."
             className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 transition-colors"
             disabled={loading}

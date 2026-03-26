@@ -29,6 +29,7 @@ export default function WorkspaceClient({
   const [activeTab, setActiveTab] = useState<Tab>('requirement')
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages)
   const [currentReview, setCurrentReview] = useState<Review | null>(latestReview)
+  const [chatInput, setChatInput] = useState('')
 
   const tabs = [
     { id: 'requirement' as Tab, label: '要件定義', icon: FileText },
@@ -83,6 +84,8 @@ export default function WorkspaceClient({
             project={project}
             messages={messages}
             onMessagesUpdate={setMessages}
+            input={chatInput}
+            onInputChange={setChatInput}
           />
         )}
         {activeTab === 'submit' && (

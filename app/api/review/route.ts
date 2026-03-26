@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { reviewCode } from '@/lib/ai/reviewer'
-import type { CodeFile } from '@/types'
+import type { CodeFile, DifficultyLevel } from '@/types'
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,6 +30,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: '権限がありません' }, { status: 403 })
     }
 
+    // プロジェクトの難易度と報酬を取得
+    const { data: projectData } = await supabase
+      .from('projects')
+      .select('difficulty, reward_amount')
+      .eq('id', userProject.project_id)
+      .single()
+
+    const difficulty = ((projectData?.difficulty) ?? 'junior') as DifficultyLevel
+
     // 全ファイルを連結して code_content に保存（後方互換 + 全文検索用）
     const code_content = files
       .map((f) => `// === ${f.name} ===\n${f.content}`)
@@ -53,7 +62,7 @@ export async function POST(request: NextRequest) {
     }
 
     // AIレビューを実行（全ファイルをまとめて渡す）
-    const reviewData = await reviewCode(files, requirements)
+    const reviewData = await reviewCode(files, requirements, difficulty)
 
     // レビュー結果をDBに保存
     const { data: review, error: reviewError } = await supabase
@@ -72,35 +81,45 @@ export async function POST(request: NextRequest) {
       .update({ status: 'reviewed', submitted_at: new Date().toISOString() })
       .eq('id', userProjectId)
 
-    // 高スコア（80点以上）なら完了扱いにして擬似報酬を付与
-    if (review.overall_score >= 80) {
-      const { data: project } = await supabase
-        .from('projects')
-        .select('reward_amount')
-        .eq('id', userProject.project_id)
+    // 納品条件: error件数 === 0 かつ overall_score >= 70
+    const errorCount = review.detailed_comments.filter(
+      (c: { severity: string }) => c.severity === 'error'
+    ).length
+    const isDeliverable = errorCount === 0 && review.overall_score >= 70
+
+    if (isDeliverable) {
+      // すでに completed なら報酬の重複付与をしない
+      const { data: currentProject } = await supabase
+        .from('user_projects')
+        .select('status')
+        .eq('id', userProjectId)
         .single()
 
-      if (project) {
+      const alreadyCompleted = currentProject?.status === 'completed'
+
+      if (projectData) {
         await supabase
           .from('user_projects')
           .update({
             status: 'completed',
             completed_at: new Date().toISOString(),
-            earned_reward: project.reward_amount,
+            earned_reward: projectData.reward_amount,
           })
           .eq('id', userProjectId)
 
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('total_earnings')
-          .eq('id', user.id)
-          .single()
-
-        if (profile) {
-          await supabase
+        if (!alreadyCompleted) {
+          const { data: profile } = await supabase
             .from('profiles')
-            .update({ total_earnings: profile.total_earnings + project.reward_amount })
+            .select('total_earnings')
             .eq('id', user.id)
+            .single()
+
+          if (profile) {
+            await supabase
+              .from('profiles')
+              .update({ total_earnings: profile.total_earnings + projectData.reward_amount })
+              .eq('id', user.id)
+          }
         }
       }
     }
