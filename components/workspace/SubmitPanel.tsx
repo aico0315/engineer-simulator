@@ -1,8 +1,57 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Send, CheckCircle2, Plus, X, Code2, Search, MessageSquare, BarChart3 } from 'lucide-react'
 import type { Project, UserProject, Submission, Review, CodeFile } from '@/types'
+
+function CodeEditor({ value, onChange, placeholder }: {
+  value: string
+  onChange: (v: string) => void
+  placeholder: string
+}) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const gutterRef = useRef<HTMLDivElement>(null)
+  const lineCount = value ? value.split('\n').length : 1
+  const gutterWidth = `${String(lineCount).length * 0.6 + 2}rem`
+
+  function syncScroll() {
+    if (gutterRef.current && textareaRef.current) {
+      gutterRef.current.scrollTop = textareaRef.current.scrollTop
+    }
+  }
+
+  // 行が増減した後の再レンダリング時もスクロール位置を同期する
+  useEffect(syncScroll)
+
+  return (
+    <div className="flex border border-slate-200 focus-within:border-blue-500 transition-colors">
+      {/* 行番号ガター（スクロールバー非表示で scrollTop 連動） */}
+      <div
+        ref={gutterRef}
+        className="select-none overflow-y-scroll shrink-0 bg-slate-100 border-r border-slate-200 [&::-webkit-scrollbar]:hidden"
+        style={{ width: gutterWidth, scrollbarWidth: 'none' }}
+      >
+        <div className="py-3 text-right">
+          {Array.from({ length: lineCount }, (_, i) => (
+            <div key={i} className="text-sm font-mono leading-relaxed text-slate-400 pr-3">
+              {i + 1}
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* コード入力エリア */}
+      <textarea
+        ref={textareaRef}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onScroll={syncScroll}
+        rows={22}
+        className="flex-1 px-4 py-3 text-sm font-mono leading-relaxed focus:outline-none resize-none bg-slate-50"
+        placeholder={placeholder}
+      />
+    </div>
+  )
+}
 
 const REVIEW_STEPS = [
   { icon: Code2,         label: 'コードを解析中...',       sub: '全ファイルの構造を読み込んでいます' },
@@ -244,12 +293,10 @@ export default function SubmitPanel({ userProject, project, latestSubmission, on
             </span>
           </div>
 
-          {/* コードエディタ */}
-          <textarea
+          {/* コードエディタ（行番号付き） */}
+          <CodeEditor
             value={activeFile.content}
-            onChange={(e) => updateActiveContent(e.target.value)}
-            rows={22}
-            className="w-full px-4 py-3 border border-slate-200 text-sm font-mono leading-relaxed focus:outline-none focus:border-blue-500 transition-colors resize-none bg-slate-50"
+            onChange={updateActiveContent}
             placeholder={`// ${activeFile.name} の内容をここに貼り付けてください`}
           />
 
