@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { reviewCode } from '@/lib/ai/reviewer'
+import type { CodeFile } from '@/types'
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,7 +12,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: '認証が必要です' }, { status: 401 })
     }
 
-    const { userProjectId, code, language, requirements } = await request.json()
+    const { userProjectId, files, requirements } = await request.json() as {
+      userProjectId: string
+      files: CodeFile[]
+      requirements: string
+    }
 
     // 所有者確認
     const { data: userProject } = await supabase
@@ -25,13 +30,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: '権限がありません' }, { status: 403 })
     }
 
+    // 全ファイルを連結して code_content に保存（後方互換 + 全文検索用）
+    const code_content = files
+      .map((f) => `// === ${f.name} ===\n${f.content}`)
+      .join('\n\n')
+    const language = files.map((f) => f.language).join(',')
+
     // コード提出をDBに保存
     const { data: submission, error: submissionError } = await supabase
       .from('submissions')
       .insert({
         user_project_id: userProjectId,
-        code_content: code,
+        code_content,
         language,
+        files,
       })
       .select()
       .single()
@@ -40,8 +52,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: '提出の保存に失敗しました' }, { status: 500 })
     }
 
-    // AIレビューを実行
-    const reviewData = await reviewCode(code, language, requirements)
+    // AIレビューを実行（全ファイルをまとめて渡す）
+    const reviewData = await reviewCode(files, requirements)
 
     // レビュー結果をDBに保存
     const { data: review, error: reviewError } = await supabase
@@ -78,7 +90,6 @@ export async function POST(request: NextRequest) {
           })
           .eq('id', userProjectId)
 
-        // プロフィールの累計報酬を加算
         const { data: profile } = await supabase
           .from('profiles')
           .select('total_earnings')

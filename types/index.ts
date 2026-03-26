@@ -63,17 +63,26 @@ export type ChatMessage = {
   created_at: string
 }
 
+// --- 提出ファイル（1ファイル分） ---
+export type CodeFile = {
+  name: string       // e.g. "index.html"
+  language: string   // e.g. "html"
+  content: string
+}
+
 // --- コード提出 ---
 export type Submission = {
   id: string
   user_project_id: string
   code_content: string
   language: string
+  files: CodeFile[] | null  // 複数ファイル提出時はここに格納
   submitted_at: string
 }
 
 // --- レビューコメント（行単位） ---
 export type ReviewComment = {
+  filename: string | null   // 複数ファイル時の対象ファイル名
   line: number | null
   comment: string
   severity: 'error' | 'warning' | 'suggestion'

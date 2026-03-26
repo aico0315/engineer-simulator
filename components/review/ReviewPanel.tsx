@@ -33,8 +33,13 @@ function CommentCard({ comment }: { comment: ReviewComment }) {
     <div className={cn('flex gap-3 p-4 rounded-xl border', config.color)}>
       <Icon className="w-4 h-4 shrink-0 mt-0.5" />
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
+        <div className="flex items-center gap-2 mb-1 flex-wrap">
           <span className="text-xs font-semibold">{config.label}</span>
+          {comment.filename && (
+            <span className="text-xs bg-black/10 px-1.5 py-0.5 rounded font-mono">
+              {comment.filename}
+            </span>
+          )}
           {comment.line && (
             <span className="text-xs bg-black/10 px-1.5 py-0.5 rounded font-mono">
               Line {comment.line}

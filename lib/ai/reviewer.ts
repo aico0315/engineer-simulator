@@ -1,18 +1,20 @@
 import Anthropic from '@anthropic-ai/sdk'
-import type { Review, ReviewComment } from '@/types'
+import type { Review, ReviewComment, CodeFile } from '@/types'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-function buildReviewPrompt(code: string, language: string, requirements: string): string {
-  return `あなたはシニアエンジニアです。以下のコードを実務レベルの視点でレビューしてください。
+function buildReviewPrompt(files: CodeFile[], requirements: string): string {
+  const filesSection = files
+    .map((f) => `### ${f.name}\n\`\`\`${f.language}\n${f.content}\n\`\`\``)
+    .join('\n\n')
+
+  return `あなたはシニアエンジニアです。以下の複数ファイルから成るコードを実務レベルの視点でレビューしてください。
 
 ## 要件定義
 ${requirements}
 
-## 提出コード（${language}）
-\`\`\`${language}
-${code}
-\`\`\`
+## 提出ファイル（${files.length}ファイル）
+${filesSection}
 
 以下のJSON形式のみで回答してください（マークダウンコードブロック不要）:
 {
@@ -23,6 +25,7 @@ ${code}
   "summary": "総評（200文字程度）。良い点と改善点をバランスよく伝えること。",
   "detailed_comments": [
     {
+      "filename": "index.html",
       "line": 12,
       "comment": "指摘内容の説明",
       "severity": "warning",
@@ -39,22 +42,22 @@ ${code}
 severity: "error"（必修修正）| "warning"（要改善）| "suggestion"（提案）
 category: "readability" | "security" | "functionality" | "best_practice"
 
-detailed_commentsは最大10件。line は該当行がない場合は null。
-スコアは0〜100の整数。`
+filename は該当ファイル名を必ず入れること（例: "style.css"）。
+line は該当行がない場合は null。
+detailed_commentsは最大10件。スコアは0〜100の整数。`
 }
 
 export async function reviewCode(
-  code: string,
-  language: string,
+  files: CodeFile[],
   requirements: string
 ): Promise<Omit<Review, 'id' | 'submission_id' | 'created_at'>> {
   const message = await anthropic.messages.create({
-    model: 'claude-opus-4-6',  // レビューは高精度モデルを使用
+    model: 'claude-opus-4-6',
     max_tokens: 2048,
     messages: [
       {
         role: 'user',
-        content: buildReviewPrompt(code, language, requirements),
+        content: buildReviewPrompt(files, requirements),
       },
     ],
   })
