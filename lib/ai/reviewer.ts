@@ -91,7 +91,7 @@ export async function reviewCode(
   difficulty: DifficultyLevel
 ): Promise<Omit<Review, 'id' | 'submission_id' | 'created_at'>> {
   const message = await anthropic.messages.create({
-    model: 'claude-opus-4-6',
+    model: 'claude-sonnet-4-6',
     max_tokens: 2048,
     messages: [
       {
