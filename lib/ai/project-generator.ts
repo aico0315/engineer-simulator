@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
-import type { Project, AiPersona, DifficultyLevel, ProjectCategory } from '@/types'
+import type { Project, AiPersona, DifficultyLevel, ProjectCategory, CodeFile } from '@/types'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -52,6 +52,47 @@ function buildPrompt(difficulty: DifficultyLevel, category: ProjectCategory): st
 }
 
 
+// リファクタリング案件用：既存の"改善前"コードを生成するプロンプト
+function buildStarterCodePrompt(
+  difficulty: DifficultyLevel,
+  title: string,
+  techStack: string[]
+): string {
+  const messGuide: Record<DifficultyLevel, string> = {
+    junior: '変数名が不明瞭、同じ処理のコピペ、マジックナンバーの使用、コメントなし',
+    mid: '状態管理の乱用（useStateの多用）、useEffectの依存配列ミス、コンポーネントの責務が大きすぎる、props drilling',
+    senior: 'N+1問題相当の非効率な処理、メモ化の欠如による不要な再レンダリング、型定義の甘さ、エラーハンドリング不足、設計パターンの不適切な適用',
+  }
+
+  return `あなたはリファクタリング前の「問題のあるコード」を書くエンジニアです。
+以下の案件に対して、リファクタリングが必要な既存コードを生成してください。
+
+案件タイトル: ${title}
+使用技術: ${techStack.join(', ')}
+難易度: ${difficulty}
+
+【コードの問題点の傾向】
+${messGuide[difficulty]}
+
+【注意事項】
+- コードは動作するが、品質に問題がある状態にすること
+- 2〜3ファイル構成にすること
+- 各ファイルは50〜120行程度
+- 実際のリファクタリング練習として意味のある内容にすること
+- 説明やコメントは最小限（コードの問題がわかりにくくなるため）
+
+以下のJSON形式で回答してください（マークダウンコードブロック不要、JSONのみ）:
+{
+  "files": [
+    {
+      "name": "ファイル名（例: ArticleList.tsx）",
+      "language": "言語（例: tsx）",
+      "content": "コードの中身（文字列）"
+    }
+  ]
+}`
+}
+
 export async function generateProject(
   difficulty: DifficultyLevel,
   category: ProjectCategory
@@ -72,6 +113,25 @@ export async function generateProject(
   const text = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/,'').trim()
   const parsed = JSON.parse(text)
 
+  // refactoringカテゴリのみ、スターターコードを別途生成する
+  let starterFiles: CodeFile[] | null = null
+  if (category === 'refactoring') {
+    const starterMessage = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 4096,
+      messages: [
+        {
+          role: 'user',
+          content: buildStarterCodePrompt(difficulty, parsed.title, parsed.tech_stack),
+        },
+      ],
+    })
+    const starterRaw = starterMessage.content[0].type === 'text' ? starterMessage.content[0].text : ''
+    const starterText = starterRaw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim()
+    const starterParsed = JSON.parse(starterText)
+    starterFiles = starterParsed.files as CodeFile[]
+  }
+
   return {
     title: parsed.title,
     description: parsed.description,
@@ -80,5 +140,6 @@ export async function generateProject(
     reward_amount: parsed.reward_amount,
     tech_stack: parsed.tech_stack,
     ai_persona: parsed.ai_persona as AiPersona,
+    starter_files: starterFiles,
   }
 }

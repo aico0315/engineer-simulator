@@ -94,7 +94,7 @@ type Props = {
 }
 
 export default function SubmitPanel({ userProject, project, latestSubmission, onReviewComplete }: Props) {
-  const initialFiles = latestSubmission?.files ?? DEFAULT_FILES
+  const initialFiles = latestSubmission?.files ?? project.starter_files ?? DEFAULT_FILES
   const [files, setFiles] = useState<CodeFile[]>(initialFiles)
   const [activeIndex, setActiveIndex] = useState(0)
   const [loading, setLoading] = useState(false)

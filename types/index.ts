@@ -24,6 +24,13 @@ export type AiPersona = {
   avatar_emoji: string   // アバター絵文字
 }
 
+// --- 提出ファイル（1ファイル分） ---
+export type CodeFile = {
+  name: string       // e.g. "index.html"
+  language: string   // e.g. "html"
+  content: string
+}
+
 export type Project = {
   id: string
   title: string
@@ -33,6 +40,7 @@ export type Project = {
   reward_amount: number
   tech_stack: string[]
   ai_persona: AiPersona
+  starter_files: CodeFile[] | null  // リファクタリング案件の既存コード
   is_active: boolean
   created_at: string
 }
@@ -61,13 +69,6 @@ export type ChatMessage = {
   role: ChatRole
   content: string
   created_at: string
-}
-
-// --- 提出ファイル（1ファイル分） ---
-export type CodeFile = {
-  name: string       // e.g. "index.html"
-  language: string   // e.g. "html"
-  content: string
 }
 
 // --- コード提出 ---
