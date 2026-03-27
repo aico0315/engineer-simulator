@@ -14,7 +14,7 @@ export type Profile = {
 
 // --- 案件（プロジェクト）---
 export type DifficultyLevel = 'junior' | 'mid' | 'senior'
-export type ProjectCategory = 'lp' | 'api' | 'ui_component' | 'form' | 'dashboard' | 'auth'
+export type ProjectCategory = 'lp' | 'ec' | 'admin' | 'dashboard' | 'auth' | 'api_integration' | 'refactoring'
 
 export type AiPersona = {
   name: string           // クライアントの名前（例: 田中 優子）

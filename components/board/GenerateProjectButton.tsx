@@ -12,12 +12,13 @@ const DIFFICULTIES: { value: DifficultyLevel; label: string }[] = [
 ]
 
 const CATEGORIES: { value: ProjectCategory; label: string }[] = [
-  { value: 'lp', label: 'LP制作' },
-  { value: 'api', label: 'API開発' },
-  { value: 'ui_component', label: 'UIコンポーネント' },
-  { value: 'form', label: 'フォーム実装' },
-  { value: 'dashboard', label: 'ダッシュボード' },
-  { value: 'auth', label: '認証機能' },
+  { value: 'lp',              label: 'LP・サービスサイト' },
+  { value: 'ec',              label: 'ECサイト' },
+  { value: 'admin',           label: '管理画面' },
+  { value: 'dashboard',       label: 'ダッシュボード' },
+  { value: 'auth',            label: '認証・会員機能' },
+  { value: 'api_integration', label: '外部API連携' },
+  { value: 'refactoring',     label: 'コード改善' },
 ]
 
 export default function GenerateProjectButton() {

@@ -17,10 +17,23 @@ function buildPrompt(difficulty: DifficultyLevel, category: ProjectCategory): st
 難易度: ${difficulty}（${difficultyGuide[difficulty]}）
 カテゴリ: ${category}
 
+【ai_persona の多様性について】
+- 名前は毎回必ず異なる人物にすること。「田中」「佐藤」「美咲」などの特定の名前に偏らないこと
+- 性別・年齢層・職種をランダムに変えること（例：40代男性の部長、20代女性の起業家、60代男性のオーナーなど）
+- avatar_emoji も人物の属性に合わせて毎回変えること（👨‍💼👩‍💼👴👨‍🍳👩‍🔬 など）
+- 会社名も業種・規模感をバラエティ豊かにすること
+
+【description の書き方の注意事項】
+- クライアントが書いた「要件定義書」として書くこと。第三者のコメントや感想は一切入れない
+- 「良い学習機会」「初心者向け」などの教育的なコメントは絶対に書かない
+- Figmaデザイン・デザインカンプ・参考URLなど、実際に存在しないリソースへの言及は書かない
+- 納期・予算・連絡先なども実在しないため書かない
+- ## 背景、## 要件、## 技術仕様 の3セクションのみで構成すること
+
 以下のJSON形式で回答してください（マークダウンコードブロック不要、JSONのみ）:
 {
   "title": "案件タイトル（例: 美容サロン向けLP制作）",
-  "description": "要件定義（Markdown形式、500〜800文字）。## 背景、## 要件、## 技術仕様 のセクションを含めること。",
+  "description": "要件定義（Markdown形式、500〜800文字）。## 背景、## 要件、## 技術仕様 のセクションのみ。",
   "reward_amount": 50000,
   "tech_stack": ["Next.js", "TypeScript", "Tailwind CSS"],
   "ai_persona": {
@@ -54,7 +67,9 @@ export async function generateProject(
     ],
   })
 
-  const text = message.content[0].type === 'text' ? message.content[0].text : ''
+  const raw = message.content[0].type === 'text' ? message.content[0].text : ''
+  // AIがmarkdownコードブロックで返すことがあるので除去する
+  const text = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/,'').trim()
   const parsed = JSON.parse(text)
 
   return {

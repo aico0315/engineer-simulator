@@ -101,7 +101,9 @@ export async function reviewCode(
     ],
   })
 
-  const text = message.content[0].type === 'text' ? message.content[0].text : '{}'
+  const raw = message.content[0].type === 'text' ? message.content[0].text : '{}'
+  // AIがmarkdownコードブロックで返すことがあるので除去する
+  const text = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim()
   const parsed = JSON.parse(text)
 
   return {

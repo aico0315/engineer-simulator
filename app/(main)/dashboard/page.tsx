@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { formatReward } from '@/lib/utils'
 import { Trophy, Briefcase, Star, TrendingUp } from 'lucide-react'
 
@@ -89,15 +90,19 @@ export default async function DashboardPage() {
 
       {/* 完了済み案件一覧 */}
       <div>
-        <h2 className="text-lg font-semibold text-slate-900 mb-4">完了した案件</h2>
+        <div className="flex items-baseline justify-between mb-4">
+          <h2 className="text-lg font-semibold text-slate-900">完了した案件</h2>
+          <p className="text-xs text-slate-400">クリックすると要件・チャット・コードを振り返ったり、修正して再レビューを受けることができます</p>
+        </div>
         {completedProjects && completedProjects.length > 0 ? (
           <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
             {completedProjects.map((up, index) => {
               const project = up.project as { title: string; difficulty: string; reward_amount: number } | null
               return (
-                <div
+                <Link
                   key={up.id}
-                  className={`flex items-center justify-between px-6 py-4 ${index !== 0 ? 'border-t border-slate-100' : ''}`}
+                  href={`/workspace/${up.project_id}`}
+                  className={`flex items-center justify-between px-6 py-4 hover:bg-slate-50 transition-colors ${index !== 0 ? 'border-t border-slate-100' : ''}`}
                 >
                   <div>
                     <p className="font-medium text-slate-900">{project?.title ?? '---'}</p>
@@ -105,10 +110,8 @@ export default async function DashboardPage() {
                       完了: {up.completed_at ? new Date(up.completed_at).toLocaleDateString('ja-JP') : '---'}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-amber-600">{formatReward(up.earned_reward ?? 0)}</p>
-                  </div>
-                </div>
+                  <p className="font-bold text-amber-600">{formatReward(up.earned_reward ?? 0)}</p>
+                </Link>
               )
             })}
           </div>

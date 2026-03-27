@@ -21,12 +21,13 @@ export const DIFFICULTY_LABELS: Record<string, string> = {
 
 // カテゴリラベルの日本語マッピング
 export const CATEGORY_LABELS: Record<string, string> = {
-  lp: 'LP制作',
-  api: 'API開発',
-  ui_component: 'UIコンポーネント',
-  form: 'フォーム実装',
+  lp: 'LP・サービスサイト',
+  ec: 'ECサイト',
+  admin: '管理画面',
   dashboard: 'ダッシュボード',
-  auth: '認証機能',
+  auth: '認証・会員機能',
+  api_integration: '外部API連携',
+  refactoring: 'コード改善',
 }
 
 // 難易度に応じたバッジカラー

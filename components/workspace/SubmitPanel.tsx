@@ -10,43 +10,48 @@ function CodeEditor({ value, onChange, placeholder }: {
   placeholder: string
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const gutterRef = useRef<HTMLDivElement>(null)
+  const [lineHeightPx, setLineHeightPx] = useState(22.75)
   const lineCount = value ? value.split('\n').length : 1
   const gutterWidth = `${String(lineCount).length * 0.6 + 2}rem`
 
-  function syncScroll() {
-    if (gutterRef.current && textareaRef.current) {
-      gutterRef.current.scrollTop = textareaRef.current.scrollTop
-    }
-  }
-
-  // 行が増減した後の再レンダリング時もスクロール位置を同期する
-  useEffect(syncScroll)
+  useEffect(() => {
+    const el = textareaRef.current
+    if (!el) return
+    // ブラウザが実際に描画するライン高さを取得してガターに適用する
+    // CSS計算値とブラウザの実描画値のズレをなくすため
+    const lh = parseFloat(getComputedStyle(el).lineHeight) || 22.75
+    setLineHeightPx(lh)
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [value])
 
   return (
     <div className="flex border border-slate-200 focus-within:border-blue-500 transition-colors">
-      {/* 行番号ガター（スクロールバー非表示で scrollTop 連動） */}
+      {/* 行番号ガター */}
       <div
-        ref={gutterRef}
-        className="select-none overflow-y-scroll shrink-0 bg-slate-100 border-r border-slate-200 [&::-webkit-scrollbar]:hidden"
-        style={{ width: gutterWidth, scrollbarWidth: 'none' }}
+        className="select-none pointer-events-none shrink-0 bg-slate-100 border-r border-slate-200"
+        style={{ width: gutterWidth }}
       >
-        <div className="py-3 text-right">
+        <div className="py-3">
           {Array.from({ length: lineCount }, (_, i) => (
-            <div key={i} className="text-sm font-mono leading-relaxed text-slate-400 pr-3">
+            <div
+              key={i}
+              className="text-sm font-mono text-slate-400 pr-3 text-right"
+              style={{ height: `${lineHeightPx}px`, lineHeight: `${lineHeightPx}px` }}
+            >
               {i + 1}
             </div>
           ))}
         </div>
       </div>
-      {/* コード入力エリア */}
+      {/* コード入力エリア（内部スクロールなし・高さ自動拡張・折り返しなし） */}
       <textarea
         ref={textareaRef}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        onScroll={syncScroll}
         rows={22}
-        className="flex-1 px-4 py-3 text-sm font-mono leading-relaxed focus:outline-none resize-none bg-slate-50"
+        wrap="off"
+        className="flex-1 px-4 py-3 text-sm font-mono leading-relaxed focus:outline-none resize-none bg-slate-50 overflow-y-hidden overflow-x-auto"
         placeholder={placeholder}
       />
     </div>
@@ -93,6 +98,8 @@ export default function SubmitPanel({ userProject, project, latestSubmission, on
   const [files, setFiles] = useState<CodeFile[]>(initialFiles)
   const [activeIndex, setActiveIndex] = useState(0)
   const [loading, setLoading] = useState(false)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const savedScrollPositions = useRef<number[]>(initialFiles.map(() => 0))
   const [submitted, setSubmitted] = useState(false)
   const [showNewFileInput, setShowNewFileInput] = useState(false)
   const [newFileName, setNewFileName] = useState('')
@@ -114,12 +121,27 @@ export default function SubmitPanel({ userProject, project, latestSubmission, on
     setFiles((prev) => prev.map((f, i) => (i === activeIndex ? { ...f, content } : f)))
   }
 
+  function switchTab(newIndex: number) {
+    // 現在のスクロール位置を保存
+    if (scrollContainerRef.current) {
+      savedScrollPositions.current[activeIndex] = scrollContainerRef.current.scrollTop
+    }
+    setActiveIndex(newIndex)
+    // 切り替え先のスクロール位置を次のフレームで復元
+    requestAnimationFrame(() => {
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTop = savedScrollPositions.current[newIndex] ?? 0
+      }
+    })
+  }
+
   function addFile() {
     const name = newFileName.trim()
     if (!name) return
     const language = getLanguageFromFilename(name)
     setFiles((prev) => [...prev, { name, language, content: '' }])
-    setActiveIndex(files.length)
+    savedScrollPositions.current.push(0)
+    switchTab(files.length)
     setNewFileName('')
     setShowNewFileInput(false)
   }
@@ -200,7 +222,7 @@ export default function SubmitPanel({ userProject, project, latestSubmission, on
   }
 
   return (
-    <div className="h-full overflow-y-auto">
+    <div ref={scrollContainerRef} className="h-full overflow-y-auto">
       <div className="max-w-4xl mx-auto p-8">
         <h2 className="text-xl font-bold text-slate-900 mb-2">コードを提出する</h2>
         <p className="text-slate-500 text-sm mb-6">
@@ -218,12 +240,12 @@ export default function SubmitPanel({ userProject, project, latestSubmission, on
         )}
 
         <form onSubmit={handleSubmit} className="space-y-0">
-          {/* ファイルタブ */}
-          <div className="flex items-center gap-0 border border-slate-200 rounded-t-xl overflow-x-auto bg-slate-100">
+          {/* ファイルタブ（スクロールしても上部に固定） */}
+          <div className="sticky top-0 z-10 flex items-center gap-0 border border-slate-200 rounded-t-xl overflow-x-auto bg-slate-100">
             {files.map((file, index) => (
               <div
                 key={index}
-                onClick={() => setActiveIndex(index)}
+                onClick={() => switchTab(index)}
                 className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-mono cursor-pointer whitespace-nowrap border-r border-slate-200 transition-colors ${
                   activeIndex === index
                     ? 'bg-white text-slate-900 border-b-2 border-b-blue-500'

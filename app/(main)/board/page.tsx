@@ -19,7 +19,13 @@ export default async function BoardPage() {
     .select('project_id, status')
     .eq('user_id', user!.id)
 
+  const completedProjectIds = new Set(
+    userProjects?.filter((up) => up.status === 'completed').map((up) => up.project_id) ?? []
+  )
   const acceptedProjectIds = new Set(userProjects?.map((up) => up.project_id) ?? [])
+
+  // 納品完了済みの案件はボードから除外する
+  const boardProjects = projects?.filter((p) => !completedProjectIds.has(p.id)) ?? []
 
   return (
     <div className="p-8">
@@ -31,9 +37,9 @@ export default async function BoardPage() {
         <GenerateProjectButton />
       </div>
 
-      {projects && projects.length > 0 ? (
+      {boardProjects.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-          {projects.map((project) => (
+          {boardProjects.map((project) => (
             <ProjectCard
               key={project.id}
               project={project}
