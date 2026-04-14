@@ -56,34 +56,38 @@ export default async function DashboardPage() {
           {
             label: '累計擬似報酬',
             value: formatReward(profile?.total_earnings ?? 0),
-            icon: <Trophy className="w-5 h-5 text-amber-500" />,
-            bg: 'bg-amber-50',
+            icon: <Trophy className="w-5 h-5 text-green-700" />,
+            bg: 'bg-green-700/35',
+            dark: true,
           },
           {
             label: '納品完了件数',
             value: `${stats.completed}件`,
-            icon: <Star className="w-5 h-5 text-blue-500" />,
-            bg: 'bg-blue-50',
+            icon: <Star className="w-5 h-5 text-stone-500" />,
+            bg: 'bg-stone-200/60',
+            dark: false,
           },
           {
             label: '進行中',
             value: `${stats.inProgress}件`,
-            icon: <Briefcase className="w-5 h-5 text-emerald-500" />,
-            bg: 'bg-emerald-50',
+            icon: <Briefcase className="w-5 h-5 text-green-700" />,
+            bg: 'bg-green-700/35',
+            dark: true,
           },
           {
             label: '受注総数',
             value: `${stats.total}件`,
-            icon: <TrendingUp className="w-5 h-5 text-purple-500" />,
-            bg: 'bg-purple-50',
+            icon: <TrendingUp className="w-5 h-5 text-stone-500" />,
+            bg: 'bg-stone-200/60',
+            dark: false,
           },
         ].map((card) => (
-          <div key={card.label} className={`${card.bg} rounded-2xl p-5 border border-white`}>
+          <div key={card.label} className={`${card.bg} rounded-2xl p-5 border ${card.dark ? 'border-green-600/20' : 'border-stone-300/50'}`}>
             <div className="flex items-center gap-2 mb-2">
               {card.icon}
-              <span className="text-sm text-slate-500">{card.label}</span>
+              <span className={`text-sm ${card.dark ? 'text-green-900' : 'text-stone-500'}`}>{card.label}</span>
             </div>
-            <div className="text-2xl font-bold text-slate-900">{card.value}</div>
+            <div className={`text-2xl font-bold ${card.dark ? 'text-green-950' : 'text-stone-800'}`}>{card.value}</div>
           </div>
         ))}
       </div>

@@ -25,7 +25,7 @@ export default function Sidebar({ profile }: { profile: Profile | null }) {
 
   return (
     <aside
-      className="w-56 flex flex-col border-r border-stone-300 shrink-0 relative"
+      className="w-56 flex flex-col border-r border-stone-300 shrink-0 relative z-20 shadow-[4px_0_16px_rgba(0,0,0,0.18)]"
       style={{
         backgroundImage: 'url(/wood.jpg)',
         backgroundSize: 'cover',
