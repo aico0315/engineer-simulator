@@ -50,13 +50,13 @@ export default function GenerateProjectButton() {
         <select
           value={difficulty}
           onChange={(e) => setDifficulty(e.target.value as DifficultyLevel)}
-          className="appearance-none pl-3 pr-8 py-2 text-sm bg-white border border-slate-200 rounded-lg text-slate-700 focus:outline-none focus:border-blue-500 cursor-pointer"
+          className="appearance-none pl-3 pr-8 py-2 text-sm bg-white border border-stone-200 rounded-lg text-stone-600 focus:outline-none focus:border-stone-400 cursor-pointer"
         >
           {DIFFICULTIES.map((d) => (
             <option key={d.value} value={d.value}>{d.label}</option>
           ))}
         </select>
-        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400 pointer-events-none" />
       </div>
 
       {/* カテゴリセレクト */}
@@ -64,19 +64,19 @@ export default function GenerateProjectButton() {
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value as ProjectCategory)}
-          className="appearance-none pl-3 pr-8 py-2 text-sm bg-white border border-slate-200 rounded-lg text-slate-700 focus:outline-none focus:border-blue-500 cursor-pointer"
+          className="appearance-none pl-3 pr-8 py-2 text-sm bg-white border border-stone-200 rounded-lg text-stone-600 focus:outline-none focus:border-stone-400 cursor-pointer"
         >
           {CATEGORIES.map((c) => (
             <option key={c.value} value={c.value}>{c.label}</option>
           ))}
         </select>
-        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400 pointer-events-none" />
       </div>
 
       <button
         onClick={handleGenerate}
         disabled={loading}
-        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-400 text-white text-sm font-semibold rounded-lg transition-colors min-w-[120px] justify-center"
+        className="flex items-center gap-2 px-4 py-2 bg-stone-700 hover:bg-stone-600 disabled:bg-stone-300 text-white text-sm font-semibold rounded-lg transition-colors min-w-[120px] justify-center"
       >
         {loading ? (
           <>

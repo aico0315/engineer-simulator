@@ -47,7 +47,7 @@ export default async function DashboardPage() {
     .sort((a, b) => (b.completed_at ?? '').localeCompare(a.completed_at ?? ''))
 
   return (
-    <div className="p-8">
+    <div className="p-8 pb-48 pr-32">
       <h1 className="text-2xl font-bold text-slate-900 mb-8">ダッシュボード</h1>
 
       {/* サマリーカード */}

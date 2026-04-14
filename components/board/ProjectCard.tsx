@@ -9,9 +9,9 @@ type Props = {
 }
 
 export default function ProjectCard({ project, isAccepted }: Props) {
-  const cardBg = isAccepted ? 'bg-blue-50/40' : 'bg-white'
-  const tabBg  = isAccepted ? 'bg-blue-100'   : 'bg-slate-100'
-  const border = isAccepted ? 'border-blue-200' : 'border-slate-200'
+  const cardBg = isAccepted ? 'bg-stone-50' : 'bg-white'
+  const tabBg  = isAccepted ? 'bg-stone-200' : 'bg-stone-100'
+  const border = isAccepted ? 'border-stone-300' : 'border-stone-200'
 
   return (
     <div className="flex flex-col">
@@ -20,7 +20,7 @@ export default function ProjectCard({ project, isAccepted }: Props) {
         'w-fit min-h-8 rounded-t-xl border-t border-l border-r flex items-center px-3 py-1',
         tabBg, border
       )}>
-        <span className="text-xs font-semibold text-slate-600 leading-tight">
+        <span className="text-xs font-semibold text-stone-500 leading-tight">
           {CATEGORY_LABELS[project.category]}
         </span>
       </div>
@@ -37,12 +37,12 @@ export default function ProjectCard({ project, isAccepted }: Props) {
         <div className="flex items-center gap-2 text-2xl">
           <span>{project.ai_persona.avatar_emoji}</span>
           <div>
-            <p className="text-xs text-slate-500">{project.ai_persona.company}</p>
-            <p className="text-sm font-medium text-slate-700">{project.ai_persona.name}</p>
+            <p className="text-xs text-stone-400">{project.ai_persona.company}</p>
+            <p className="text-sm font-medium text-stone-600">{project.ai_persona.name}</p>
           </div>
         </div>
         {isAccepted && (
-          <span className="flex items-center gap-1 text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full whitespace-nowrap">
+          <span className="flex items-center gap-1 text-xs text-stone-600 bg-stone-200 px-2 py-0.5 rounded-full whitespace-nowrap">
             <CheckCircle2 className="w-3 h-3" />
             受注済み
           </span>
@@ -51,8 +51,8 @@ export default function ProjectCard({ project, isAccepted }: Props) {
 
       {/* タイトルと説明 */}
       <div>
-        <h3 className="font-semibold text-slate-900 mb-1 leading-snug">{project.title}</h3>
-        <p className="text-sm text-slate-500 line-clamp-2">
+        <h3 className="font-semibold text-stone-800 mb-1 leading-snug">{project.title}</h3>
+        <p className="text-sm text-stone-400 line-clamp-2">
           {project.description.split('\n')[0].replace(/^#+\s*/, '')}
         </p>
       </div>
@@ -62,19 +62,19 @@ export default function ProjectCard({ project, isAccepted }: Props) {
         <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium', DIFFICULTY_COLORS[project.difficulty])}>
           {DIFFICULTY_LABELS[project.difficulty]}
         </span>
-        <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+        <span className="text-xs px-2 py-0.5 rounded-full bg-stone-100 text-stone-500">
           {CATEGORY_LABELS[project.category]}
         </span>
         {(project.tech_stack ?? []).slice(0, 2).map((tech) => (
-          <span key={tech} className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+          <span key={tech} className="text-xs px-2 py-0.5 rounded-full bg-stone-100 text-stone-500">
             {tech}
           </span>
         ))}
       </div>
 
       {/* フッター */}
-      <div className="pt-2 border-t border-slate-100">
-        <p className="text-xs text-slate-400 flex items-center gap-1">
+      <div className="pt-2 border-t border-stone-100">
+        <p className="text-xs text-stone-300 flex items-center gap-1">
           <Clock className="w-3 h-3" />
           擬似報酬
         </p>

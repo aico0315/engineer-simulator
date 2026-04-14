@@ -41,7 +41,7 @@ export default function WorkspaceClient({
   return (
     <div className="flex flex-col h-full">
       {/* ヘッダー */}
-      <div className="bg-white border-b border-slate-200 px-8 pt-6 pb-0">
+      <div className="bg-white/50 border-b border-stone-300/50 px-8 pt-6 pb-0">
         <div className="flex items-center gap-3 mb-4">
           <span className="text-2xl">{project.ai_persona.avatar_emoji}</span>
           <div>

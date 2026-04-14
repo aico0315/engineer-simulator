@@ -28,11 +28,11 @@ export default async function BoardPage() {
   const boardProjects = projects?.filter((p) => !completedProjectIds.has(p.id)) ?? []
 
   return (
-    <div className="p-8">
+    <div className="p-8 pb-48 pr-32">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">案件ボード</h1>
-          <p className="text-slate-500 mt-1">AIが生成した架空の案件に挑戦しよう</p>
+          <h1 className="text-2xl font-bold text-stone-900">案件ボード</h1>
+          <p className="text-stone-500 mt-1">AIが生成した架空の案件に挑戦しよう</p>
         </div>
         <GenerateProjectButton />
       </div>
@@ -48,7 +48,7 @@ export default async function BoardPage() {
           ))}
         </div>
       ) : (
-        <div className="text-center py-24 text-slate-400">
+        <div className="text-center py-24 text-stone-400">
           <p className="text-lg mb-4">案件がまだありません</p>
           <p className="text-sm">「案件を生成」ボタンで新しい案件を作成してください</p>
         </div>

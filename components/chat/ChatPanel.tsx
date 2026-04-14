@@ -64,7 +64,8 @@ export default function ChatPanel({ userProject, project, messages, onMessagesUp
   return (
     <div className="flex flex-col h-full">
       {/* チャット履歴 */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+      <div className="flex-1 overflow-y-auto p-6">
+      <div className="max-w-3xl mx-auto space-y-4">
         {messages.length === 0 && (
           <div className="text-center py-12 text-slate-400">
             <p className="text-2xl mb-3">{project.ai_persona.avatar_emoji}</p>
@@ -108,11 +109,12 @@ export default function ChatPanel({ userProject, project, messages, onMessagesUp
         )}
 
         <div ref={bottomRef} />
+      </div>{/* max-w-3xl */}
       </div>
 
       {/* 入力フォーム */}
       <div className="p-4 bg-white border-t border-slate-200">
-        <form onSubmit={handleSend} className="flex gap-3">
+        <form onSubmit={handleSend} className="flex gap-3 max-w-3xl mx-auto">
           <input
             value={input}
             onChange={(e) => onInputChange(e.target.value)}
