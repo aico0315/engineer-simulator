@@ -29,6 +29,7 @@ function buildPrompt(difficulty: DifficultyLevel, category: ProjectCategory): st
 - Figmaデザイン・デザインカンプ・参考URLなど、実際に存在しないリソースへの言及は書かない
 - 納期・予算・連絡先なども実在しないため書かない
 - ## 背景、## 要件、## 技術仕様 の3セクションのみで構成すること
+- 文中に「**」「__」などのMarkdown装飾は一切使わないこと
 
 以下のJSON形式で回答してください（マークダウンコードブロック不要、JSONのみ）:
 {
@@ -132,9 +133,12 @@ export async function generateProject(
     starterFiles = starterParsed.files as CodeFile[]
   }
 
+  // プロンプト指示に従わず ** が残った場合の保険
+  const description = (parsed.description as string).replace(/\*\*/g, '').replace(/__/g, '')
+
   return {
     title: parsed.title,
-    description: parsed.description,
+    description,
     difficulty,
     category,
     reward_amount: parsed.reward_amount,
