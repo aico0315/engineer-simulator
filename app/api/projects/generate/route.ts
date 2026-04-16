@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { generateProject } from '@/lib/ai/project-generator'
-import type { DifficultyLevel, ProjectCategory } from '@/types'
+
+const GenerateSchema = z.object({
+  difficulty: z.enum(['junior', 'mid', 'senior']).default('junior'),
+  category: z.enum(['lp', 'ec', 'admin', 'dashboard', 'auth', 'api_integration', 'refactoring']).default('lp'),
+})
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,8 +19,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const difficulty: DifficultyLevel = body.difficulty ?? 'junior'
-    const category: ProjectCategory = body.category ?? 'lp'
+    const parsed = GenerateSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ success: false, error: '入力が不正です' }, { status: 400 })
+    }
+    const { difficulty, category } = parsed.data
 
     // AIで案件を生成
     const projectData = await generateProject(difficulty, category)

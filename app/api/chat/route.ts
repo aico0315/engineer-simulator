@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { generateChatResponse } from '@/lib/ai/chat-client'
+
+const ChatSchema = z.object({
+  userProjectId: z.string().uuid(),
+  projectId: z.string().uuid(),
+  message: z.string().min(1).max(4000),
+})
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,7 +18,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: '認証が必要です' }, { status: 401 })
     }
 
-    const { userProjectId, message, projectId } = await request.json()
+    const body = await request.json()
+    const parsed = ChatSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ success: false, error: '入力が不正です' }, { status: 400 })
+    }
+    const { userProjectId, message, projectId } = parsed.data
 
     // user_projectsの所有者確認（RLSでも守られているが明示的にチェック）
     const { data: userProject } = await supabase

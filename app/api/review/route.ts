@@ -1,7 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { reviewCode } from '@/lib/ai/reviewer'
-import type { CodeFile, DifficultyLevel } from '@/types'
+import type { DifficultyLevel } from '@/types'
+
+const CodeFileSchema = z.object({
+  name: z.string().min(1).max(200),
+  content: z.string().max(100000),
+  language: z.string().min(1).max(50),
+})
+
+const ReviewSchema = z.object({
+  userProjectId: z.string().uuid(),
+  requirements: z.string().min(1).max(10000),
+  files: z.array(CodeFileSchema).min(1).max(20),
+})
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,11 +25,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: '認証が必要です' }, { status: 401 })
     }
 
-    const { userProjectId, files, requirements } = await request.json() as {
-      userProjectId: string
-      files: CodeFile[]
-      requirements: string
+    const body = await request.json()
+    const parsed = ReviewSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ success: false, error: '入力が不正です' }, { status: 400 })
     }
+    const { userProjectId, files, requirements } = parsed.data
 
     // 所有者確認
     const { data: userProject } = await supabase
