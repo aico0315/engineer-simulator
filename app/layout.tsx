@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
-import { Analytics } from '@vercel/analytics/next'
+import AnalyticsWrapper from '@/components/AnalyticsWrapper'
 import './globals.css'
 
 const geistSans = Geist({
@@ -27,7 +27,7 @@ export default function RootLayout({
     <html lang="ja" className={`${geistSans.variable} ${geistMono.variable} h-full`}>
       <body className="h-full bg-slate-50 text-slate-900 antialiased" suppressHydrationWarning>
         {children}
-        <Analytics />
+        <AnalyticsWrapper />
       </body>
     </html>
   )
